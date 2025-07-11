@@ -7,6 +7,7 @@
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
+    "date-fns": "^4.1.0",
     "elysia": "latest",
     "google-auth-library": "^10.1.0",
     "jsonwebtoken": "^9.0.2",

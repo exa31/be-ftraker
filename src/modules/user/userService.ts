@@ -1,7 +1,6 @@
 import UserModel from "./userModel";
 import {Context} from "elysia";
 import zod from "zod";
-
 import {formatErrorValidation, validate} from "../../utils/validation";
 import {loginBodySchema, loginWithGoogleBodySchema, registerBodySchema} from "./userSchema";
 import logger from "../../utils/logger";
@@ -37,7 +36,8 @@ class UserService {
                 email: user.email,
                 name: user.name
             });
-
+            user.token.push(token);
+            await user.save();
             logger.info(`User ${user.email} logged in successfully`);
             ctx.set.status = 200;
             return SuccessResponse<ResponseAuth>({
@@ -77,6 +77,7 @@ class UserService {
                 email: newUser.email,
                 name: newUser.name
             });
+            newUser.token.push(token);
             logger.info(`User ${email} registered successfully`);
             ctx.set.status = 201;
             return SuccessResponse<ResponseAuth>({
@@ -125,6 +126,8 @@ class UserService {
                     email: existingUser.email,
                     name: existingUser.name
                 });
+                existingUser.token.push(token);
+                await existingUser.save();
                 logger.info(`User ${email} logged in with Google successfully`);
                 ctx.set.status = 200;
                 return SuccessResponse<ResponseAuth>({

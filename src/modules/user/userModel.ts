@@ -1,4 +1,4 @@
-import { Schema, Types, model, Document } from 'mongoose';
+import {Document, model, Schema, Types} from 'mongoose';
 
 
 export interface User extends Document {
@@ -12,13 +12,10 @@ export interface User extends Document {
 }
 
 const userSchema = new Schema<User>({
-    name: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-    token: [{ type: String }],
-    password: { type: String, required: true },
-    blog: [{ type: Types.ObjectId, ref: 'Blog' }],
-    like: [{ type: Types.ObjectId, ref: 'Blog' }],
-    saveBlog: [{ type: Types.ObjectId, ref: 'Blog' }],
+    name: {type: String, required: true},
+    email: {type: String, required: true, unique: true},
+    token: [{type: String}],
+    password: {type: String, required: true},
 });
 
 export default model<User>('User', userSchema);

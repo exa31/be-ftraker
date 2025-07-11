@@ -1,29 +1,29 @@
 import {Elysia} from "elysia";
 import "./databases"
 import UserRoutes from "./modules/user/userRoutes";
-import Config from "./config";
-import logger from "./utils/logger";
+import TransactionRoutes from "./modules/transaction/transactionRoutes";
+import {logrouting} from "./middleware/logrouting";
+import {logrequest} from "./middleware/logrequest";
+import {validateToken} from "./middleware/validateToken";
 
 const app = new Elysia().onStart(
     (server) => {
-        if (Config.MODE === 'development') {
-            console.log("Available routes:");
-            server.routes.forEach(route => {
-                console.log(`- ${route.method} ${route.path}`);
-            });
-        }
+        logrouting(server);
     }
 ).onRequest((ctx) => {
-    // Middleware to log request details
-    if (Config.MODE === 'development') {
-        logger.info(`Incoming request: ${ctx.request.method} ${ctx.request.url.split("/").slice(3).join("/")}`);
-    }
+    logrequest(ctx);
 })
     .group('/auth/v1', (group) =>
         group.use(UserRoutes)
     ).group(
         '/api/v1',
         (group) => group
+            .resolve(
+                (ctx) => {
+                    return validateToken(ctx)
+                }
+            )
+            .use(TransactionRoutes)
     )
     .listen(3000);
 
