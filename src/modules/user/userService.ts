@@ -7,7 +7,7 @@ import logger from "../../utils/logger";
 import {ErrorResponse, SuccessResponse} from "../../utils/response";
 import {ResponseModel} from "../../types/response";
 import {comparePassword, encryptPassword} from "../../utils/bcrypt";
-import {generateJwt} from "../../utils/jwt";
+import {decodeJwt, generateJwt} from "../../utils/jwt";
 import {OAuth2Client} from "google-auth-library";
 import Config from "../../config";
 import {ResponseAuth} from "../../types/user";
@@ -47,7 +47,7 @@ class UserService {
                 200
             );
         } catch (error) {
-            logger.error(`Error in login handler: ${error}`);
+            logger.error(`Error in login handler: ${JSON.stringify(error)}`);
             if (error instanceof zod.ZodError) {
                 const message = formatErrorValidation(error);
                 ctx.set.status = 400;
@@ -87,7 +87,7 @@ class UserService {
                 201
             );
         } catch (error) {
-            logger.error(`Error in register handler: ${error}`);
+            logger.error(`Error in register handler: ${JSON.stringify(error)}`);
             if (error instanceof zod.ZodError) {
                 const message = formatErrorValidation(error);
                 ctx.set.status = 400;
@@ -138,12 +138,39 @@ class UserService {
                 return ErrorResponse<null>("User does not exist", null, 404);
             }
         } catch (error) {
-            logger.error(`Error in loginWithGoogle handler: ${error}`);
+            logger.error(`Error in loginWithGoogle handler: ${JSON.stringify(error)}`);
             if (error instanceof zod.ZodError) {
                 const message = formatErrorValidation(error);
                 ctx.set.status = 400;
                 return ErrorResponse<Record<string, string>>("Validation error", message, 400);
             }
+            ctx.set.status = 500;
+            return ErrorResponse<string>("Internal server error", (error as Error).message, 500);
+        }
+    }
+
+    static async logout(ctx: Context): Promise<ResponseModel<string | null>> {
+        try {
+            const {token} = ctx.body as { token: string };
+            const decoded = decodeJwt(token)
+            if (!decoded || !decoded.email) {
+                ctx.set.status = 401;
+                return ErrorResponse<null>("Invalid token", null, 401);
+            }
+            const user = await UserModel.findOneAndUpdate(
+                {email: decoded.email},
+                {$pull: {token: token}},
+                {new: true}
+            );
+            if (!user) {
+                ctx.set.status = 404;
+                return ErrorResponse<null>("User not found", null, 404);
+            }
+            logger.info(`User ${decoded.email} logged out successfully`);
+            ctx.set.status = 200;
+            return SuccessResponse<null>(null, "Logged out successfully", 200);
+        } catch (error) {
+            logger.error(`Error in logout handler: ${JSON.stringify(error)}`);
             ctx.set.status = 500;
             return ErrorResponse<string>("Internal server error", (error as Error).message, 500);
         }

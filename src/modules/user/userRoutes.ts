@@ -11,6 +11,9 @@ const UserRoutes = new Elysia()
     .post('/login-with-google', async (ctx) => {
         return await UserService.loginWithGoogle(ctx);
     })
+    .post('/logout', async (ctx) => {
+        return await UserService.logout(ctx);
+    })
 
 export default UserRoutes;
 

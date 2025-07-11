@@ -18,3 +18,11 @@ export const verifyJwt = (token: string): payloadJwt | null => {
     }
 };
 
+export const decodeJwt = (token: string): payloadJwt | null => {
+    try {
+        return jwt.decode(token) as payloadJwt;
+    } catch (error) {
+        console.error('JWT decoding failed:', error);
+        return null;
+    }
+};

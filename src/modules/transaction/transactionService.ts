@@ -46,7 +46,7 @@ class TransactionService {
             }, "Transactions retrieved successfully", 200);
         } catch (error) {
             // Log the error for debugging purposes
-            logger.error(`Error in getTransactions handler: ${error}`);
+            logger.error(`Error in getTransactions handler: ${JSON.stringify(error)}`);
             if (error instanceof ZodError) {
                 const message = formatErrorValidation(error);
                 ctx.set.status = 400;
@@ -78,7 +78,7 @@ class TransactionService {
 
         } catch (error) {
             // Log the error for debugging purposes
-            logger.error(`Error in createTransaction handler: ${error}`);
+            logger.error(`Error in createTransaction handler: ${JSON.stringify(error)}`);
             if (error instanceof ZodError) {
                 const message = formatErrorValidation(error);
                 ctx.set.status = 400;
@@ -111,7 +111,7 @@ class TransactionService {
             return SuccessResponse<responseUpdateTransaction>(transaction, "Transaction updated successfully", 200);
         } catch (error) {
             // Log the error for debugging purposes
-            logger.error(`Error in updateTransaction handler: ${error}`);
+            logger.error(`Error in updateTransaction handler: ${JSON.stringify(error)}`);
             if (error instanceof ZodError) {
                 const message = formatErrorValidation(error);
                 ctx.set.status = 400;
@@ -137,7 +137,7 @@ class TransactionService {
             return SuccessResponse<null>(null, "Transaction deleted successfully", 200);
         } catch (error) {
             // Log the error for debugging purposes
-            logger.error(`Error in deleteTransaction handler: ${error}`);
+            logger.error(`Error in deleteTransaction handler: ${JSON.stringify(error)}`);
             ctx.set.status = 500;
             return ErrorResponse<string>("Internal server error", (error as Error).message, 500);
         }

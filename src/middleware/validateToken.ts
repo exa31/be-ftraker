@@ -53,7 +53,7 @@ export const validateToken = async (ctx: Context) => {
             }
         }
     } catch (error) {
-        logger.error(`Error while checking token in database: ${error}`);
+        logger.error(`Error while checking token in database: ${JSON.stringify(error)}`);
         if (error instanceof Error) {
             ctx.set.status = 500;
             throw ErrorResponse<string>(
