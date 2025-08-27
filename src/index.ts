@@ -1,5 +1,5 @@
 import {Elysia} from "elysia";
-import "./databases"
+import "./databases/mongodb"
 import UserRoutes from "./modules/user/userRoutes";
 import TransactionRoutes from "./modules/transaction/transactionRoutes";
 import {logrouting} from "./middleware/logrouting";

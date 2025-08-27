@@ -1,18 +1,19 @@
 import {Elysia} from "elysia";
 import UserService from "./userService";
+import {wrappingDbTransaction} from "../../utils/db";
 
 const UserRoutes = new Elysia()
     .post('/login', async (ctx) => {
-        return await UserService.login(ctx);
+        return await wrappingDbTransaction(ctx, UserService.login);
     })
     .post('/register', async (ctx) => {
-        return await UserService.register(ctx);
+        return await wrappingDbTransaction(ctx, UserService.register);
     })
     .post('/login-with-google', async (ctx) => {
-        return await UserService.loginWithGoogle(ctx);
+        return await wrappingDbTransaction(ctx, UserService.loginWithGoogle);
     })
     .post('/logout', async (ctx) => {
-        return await UserService.logout(ctx);
+        return await wrappingDbTransaction(ctx, UserService.logout);
     })
 
 export default UserRoutes;

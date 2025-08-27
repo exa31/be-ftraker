@@ -1,3 +1,4 @@
 export interface ResponseAuth {
-    token: string;
+    accessToken: string;
+    refreshToken: string;
 }
