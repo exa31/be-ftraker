@@ -11,17 +11,21 @@ import {checkExpiredToken, decodeJwt, generateJwt} from "../../utils/jwt";
 import {OAuth2Client} from "google-auth-library";
 import Config from "../../config";
 import {ResponseAuth} from "../../types/user";
-import clientRedis from "../../databases/redis";
 import mongoose from "mongoose";
 import tokenModel from "../token/tokenModel";
+import getClientRedis from "../../databases/redis";
 
 class UserService {
 
     static async login(ctx: Context, session: mongoose.ClientSession): Promise<ResponseModel<ResponseAuth | null>> {
         validate(ctx.body, loginBodySchema)
         const {email, password} = ctx.body as zod.infer<typeof loginBodySchema>;
-
         const user = await UserModel.findOne({email});
+        const clientRedis = await getClientRedis();
+        if (!clientRedis) {
+            ctx.set.status = 500;
+            return ErrorResponse<null>("Redis connection error", null, 500);
+        }
         if (!user) {
             ctx.set.status = 401;
             return ErrorResponse<null>("Email or Password is wrong", null, 401)
@@ -71,11 +75,15 @@ class UserService {
         );
     }
 
-    static async register(ctx: Context, session: mongoose.ClientSession): Promise<ResponseModel<ResponseAuth>> {
+    static async register(ctx: Context, session: mongoose.ClientSession): Promise<ResponseModel<ResponseAuth | null>> {
         // Implement registration logic here
         validate(ctx.body, registerBodySchema)
         const {email, password, name} = ctx.body as zod.infer<typeof registerBodySchema>;
-
+        const clientRedis = await getClientRedis();
+        if (!clientRedis) {
+            ctx.set.status = 500;
+            return ErrorResponse<null>("Redis connection error", null, 500);
+        }
         const hashedPassword = await encryptPassword(password);
 
         const newUser = new UserModel({
@@ -124,6 +132,11 @@ class UserService {
     static async loginWithGoogle(ctx: Context, session: mongoose.ClientSession): Promise<ResponseModel<ResponseAuth | null>> {
         validate(ctx.body, loginWithGoogleBodySchema)
         const {credential} = ctx.body as zod.infer<typeof loginWithGoogleBodySchema>;
+        const clientRedis = await getClientRedis();
+        if (!clientRedis) {
+            ctx.set.status = 500;
+            return ErrorResponse<null>("Redis connection error", null, 500);
+        }
 
         const client = new OAuth2Client(Config.GOOGLE_CLIENT_ID)
 
@@ -196,6 +209,11 @@ class UserService {
 
     static async refreshToken(ctx: Context, session: mongoose.ClientSession): Promise<ResponseModel<ResponseAuth | null>> {
         const refreshToken = ctx.cookie.refreshToken.value;
+        const clientRedis = await getClientRedis();
+        if (!clientRedis) {
+            ctx.set.status = 500;
+            return ErrorResponse<null>("Redis connection error", null, 500);
+        }
         if (!refreshToken) {
             ctx.set.status = 401;
             return ErrorResponse<null>("Refresh token not found", null, 401);
