@@ -52,7 +52,7 @@ class UserService {
             expireAt: new Date(Date.now() + 60 * 60 * 24 * 30 * 1000) // 30 days
         })
         await user.save({session});
-        clientRedis.setEx(`refreshToken:${refreshToken}`, 60 * 60 * 24 * 30, refreshToken); // 30 days expiration
+        await clientRedis.setEx(`refreshToken:${refreshToken}`, 60 * 60 * 24 * 30, refreshToken); // 30 days expiration
         ctx.cookie.refreshToken.set({
             value: refreshToken,
             expires: new Date(Date.now() + 60 * 60 * 24 * 30 * 1000), // 30 hari
@@ -110,7 +110,7 @@ class UserService {
             secure: true, // true kalau di https
             path: '/', // biasanya set path juga
         })
-        clientRedis.setEx(`refreshToken:${refreshToken}`, 60 * 60 * 24 * 30, refreshToken); // 30 days expiration
+        await clientRedis.setEx(`refreshToken:${refreshToken}`, 60 * 60 * 24 * 30, refreshToken); // 30 days expiration
         logger.info(`User ${email} registered successfully`);
         ctx.set.status = 201;
         return SuccessResponse<ResponseAuth>({
@@ -167,7 +167,7 @@ class UserService {
                 secure: true, // true kalau di https
                 path: '/', // biasanya set path juga
             })
-            clientRedis.setEx(`refreshToken:${refreshToken}`, 60 * 60 * 24 * 30, refreshToken); // 30 days expiration
+            await clientRedis.setEx(`refreshToken:${refreshToken}`, 60 * 60 * 24 * 30, refreshToken); // 30 days expiration
             logger.info(`User ${email} logged in with Google successfully`);
             ctx.set.status = 200;
             return SuccessResponse<ResponseAuth>({
@@ -206,6 +206,8 @@ class UserService {
             if (!tokenInDb) {
                 ctx.set.status = 401;
                 return ErrorResponse<null>("Invalid refresh token", null, 401);
+            } else {
+                await clientRedis.setEx(`refreshToken:${refreshToken}`, 60 * 60 * 24 * 30, refreshToken); // 30 days expiration
             }
         }
         const {expired, willExpireSoon} = checkExpiredToken(refreshToken);

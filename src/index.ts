@@ -19,8 +19,8 @@ const app = new Elysia().onStart(
         '/api/v1',
         (group) => group
             .resolve(
-                async (ctx) => {
-                    return await validateToken(ctx)
+                (ctx) => {
+                    return validateToken(ctx)
                 }
             )
             .use(TransactionRoutes)

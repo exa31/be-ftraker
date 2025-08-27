@@ -3,7 +3,7 @@ import {ErrorResponse} from "../utils/response";
 import {verifyJwt} from "../utils/jwt";
 import logger from "../utils/logger";
 
-export const validateToken = async (ctx: Context) => {
+export const validateToken = (ctx: Context) => {
     // Middleware to validate JWT token
     logger.info(`Validating token for request: ${ctx.request.method} ${ctx.request.url.split('/').slice(3).join('/')}`);
     const token = ctx.request.headers.get('Authorization')?.split(' ')[1];
