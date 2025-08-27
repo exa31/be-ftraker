@@ -17,6 +17,7 @@ class TransactionService {
             validate(ctx.query, getTransactionQuerySchema)
             const {view} = ctx.query as zod.infer<typeof getTransactionQuerySchema>;
             const user = ctx.user; // Assuming user is set in the context state after authentication
+            console.log(user)
             const {lastPeriode, currentPeriode} = useSelectedView(view);
             if (view === "All") {
                 const all = await TransactionModel

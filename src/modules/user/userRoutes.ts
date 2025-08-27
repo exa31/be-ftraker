@@ -15,6 +15,9 @@ const UserRoutes = new Elysia()
     .post('/logout', async (ctx) => {
         return await wrappingDbTransaction(ctx, UserService.logout);
     })
+    .post('/refresh', async (ctx) => {
+        return await wrappingDbTransaction(ctx, UserService.refreshToken);
+    })
 
 export default UserRoutes;
 

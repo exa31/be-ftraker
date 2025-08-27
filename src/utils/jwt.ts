@@ -1,12 +1,11 @@
 import jwt from 'jsonwebtoken';
 import Config from '../config';
 import {payloadJwt} from "../types/jwt";
-import {config} from "zod"; // jika kamu punya config terpisah
 
 export const generateJwt = (payload: payloadJwt): string => {
     if (payload.type === 'refresh') {
         return jwt.sign(payload, Config.JWT_SECRET as string, {
-            expiresIn: '30d'
+            expiresIn: '30d',
         });
     }
     return jwt.sign(payload, Config.JWT_SECRET as string, {
@@ -39,3 +38,29 @@ export const decodeJwt = (token: string): payloadJwt | null => {
         return null;
     }
 };
+
+export const checkExpiredToken = (token: string): { expired: boolean; willExpireSoon: boolean } => {
+    try {
+        const decoded = jwt.verify(token, Config.JWT_SECRET as string) as payloadJwt
+
+        // waktu sekarang (detik)
+        const now = Math.floor(Date.now() / 1000)
+        // 3 hari ke depan
+        const threeDays = 3 * 24 * 60 * 60
+        if (!decoded.exp) {
+            return {expired: false, willExpireSoon: false}
+        }
+        const timeLeft = decoded.exp - now
+
+        return {
+            expired: false,
+            willExpireSoon: timeLeft <= threeDays
+        }
+    } catch (error) {
+        if (error instanceof jwt.TokenExpiredError) {
+            return {expired: true, willExpireSoon: false}
+        }
+        console.error('JWT verification failed:', error)
+        return {expired: false, willExpireSoon: false}
+    }
+}

@@ -5,6 +5,7 @@ import {formatErrorValidation} from "./validation";
 import {ErrorResponse} from "./response";
 import {Context} from "elysia";
 import {ResponseModel} from "../types/response";
+import jwt from "jsonwebtoken";
 
 export const wrappingDbTransaction = async <TCTX extends Context, T>(ctx: TCTX, fn: (ctx: TCTX, tx: mongoose.ClientSession) => Promise<ResponseModel<T>>): Promise<ResponseModel<T> | ResponseModel<Record<string, string>> | ResponseModel<string>> => {
     const session = await mongoose.startSession({defaultTimeoutMS: 5000});
@@ -29,6 +30,17 @@ export const wrappingDbTransaction = async <TCTX extends Context, T>(ctx: TCTX, 
                 `${field} already exists`,
                 `The value '${value}' for field '${field}' already exists.`,
                 409
+            );
+        }// Token expired (JWT / session expired)
+        else if (
+            (error as jwt.VerifyErrors).name === "TokenExpiredError" ||
+            (error as Error).message.toLowerCase().includes("expired")
+        ) {
+            ctx.set.status = 401;
+            return ErrorResponse<string>(
+                "Token expired",
+                "Your session has expired. Please log in again.",
+                401
             );
         }
         ctx.set.status = 500;

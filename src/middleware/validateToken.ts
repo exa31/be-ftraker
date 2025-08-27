@@ -1,7 +1,6 @@
 import {Context} from "elysia";
 import {ErrorResponse} from "../utils/response";
 import {verifyJwt} from "../utils/jwt";
-import UserModel from "../modules/user/userModel";
 import logger from "../utils/logger";
 
 export const validateToken = async (ctx: Context) => {
@@ -18,7 +17,7 @@ export const validateToken = async (ctx: Context) => {
         )
     }
     // Assuming you have a function to verify the token
-    const user = verifyJwt(token);
+    const user = verifyJwt(token, true, 'access');
     if (!user) {
         logger.warn("Unauthorized access attempt: Invalid token");
         ctx.set.status = 401;
@@ -28,48 +27,10 @@ export const validateToken = async (ctx: Context) => {
             401
         );
     }
-    try {
-
-        const isActiveToken = await UserModel.findOne({
-            email: user.email,
-            token: {
-                $in: [token]
-            }
-        })
-        if (!isActiveToken) {
-            logger.warn(`Unauthorized access attempt: Token not found for user ${user.email}`);
-            throw ErrorResponse<null>(
-                "Unauthorized: Token not found",
-                null,
-                401
-            );
-        }
-        logger.info(`Token validated successfully for user: ${user.email}`);
-        // Attach user information to the context for further use
-        return {
-            user: {
-                ...user,
-                id: isActiveToken.id
-            }
-        }
-    } catch (error) {
-        logger.error(`Error while checking token in database: ${JSON.stringify(error)}`);
-        if (error instanceof Error) {
-            ctx.set.status = 500;
-            throw ErrorResponse<string>(
-                "Internal server error",
-                error.message,
-                500
-            );
-        } else {
-            logger.warn(`Unauthorized access attempt: Token not found`);
-            ctx.set.status = 401;
-            throw ErrorResponse<null>(
-                "Unauthorized: Token not found",
-                null,
-                401
-            );
+    return {
+        user: {
+            ...user,
+            id: user.id_user
         }
     }
-
 }

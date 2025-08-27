@@ -4,4 +4,5 @@ export interface payloadJwt extends jwt.JwtPayload {
     email: string;
     name: string;
     type: "access" | "refresh";
+    id_user: string;
 }

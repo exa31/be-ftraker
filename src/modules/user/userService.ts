@@ -7,12 +7,13 @@ import logger from "../../utils/logger";
 import {ErrorResponse, SuccessResponse} from "../../utils/response";
 import {ResponseModel} from "../../types/response";
 import {comparePassword, encryptPassword} from "../../utils/bcrypt";
-import {decodeJwt, generateJwt} from "../../utils/jwt";
+import {checkExpiredToken, decodeJwt, generateJwt} from "../../utils/jwt";
 import {OAuth2Client} from "google-auth-library";
 import Config from "../../config";
 import {ResponseAuth} from "../../types/user";
 import clientRedis from "../../databases/redis";
 import mongoose from "mongoose";
+import tokenModel from "../token/tokenModel";
 
 class UserService {
 
@@ -37,20 +38,33 @@ class UserService {
             email: user.email,
             name: user.name,
             type: 'access',
+            id_user: user.id
         });
         const refreshToken = generateJwt({
             email: user.email,
             name: user.name,
             type: 'refresh',
+            id_user: user.id
         });
-        user.token.push(refreshToken);
+        await tokenModel.create({
+            token: refreshToken,
+            id_user: user._id,
+            expireAt: new Date(Date.now() + 60 * 60 * 24 * 30 * 1000) // 30 days
+        })
         await user.save({session});
         clientRedis.setEx(`refreshToken:${refreshToken}`, 60 * 60 * 24 * 30, refreshToken); // 30 days expiration
+        ctx.cookie.refreshToken.set({
+            value: refreshToken,
+            expires: new Date(Date.now() + 60 * 60 * 24 * 30 * 1000), // 30 hari
+            httpOnly: true,
+            sameSite: 'lax',
+            secure: true, // true kalau di https
+            path: '/', // biasanya set path juga
+        });
         logger.info(`User ${user.email} logged in successfully`);
         ctx.set.status = 200;
         return SuccessResponse<ResponseAuth>({
                 accessToken,
-                refreshToken
             },
             "Login successful",
             200
@@ -74,19 +88,32 @@ class UserService {
             email: newUser.email,
             name: newUser.name,
             type: 'access',
+            id_user: newUser.id
         });
         const refreshToken = generateJwt({
             email: newUser.email,
             name: newUser.name,
             type: 'refresh',
+            id_user: newUser.id
         });
-        newUser.token.push(refreshToken);
+        await tokenModel.create({
+            token: refreshToken,
+            id_user: newUser._id,
+            expireAt: new Date(Date.now() + 60 * 60 * 24 * 30 * 1000) // 30 days
+        }, {session})
         await newUser.save({session});
+        ctx.cookie.refreshToken.set({
+            value: refreshToken,
+            expires: new Date(Date.now() + 60 * 60 * 24 * 30 * 1000), // 30 hari
+            httpOnly: true,
+            sameSite: 'lax',
+            secure: true, // true kalau di https
+            path: '/', // biasanya set path juga
+        })
         clientRedis.setEx(`refreshToken:${refreshToken}`, 60 * 60 * 24 * 30, refreshToken); // 30 days expiration
         logger.info(`User ${email} registered successfully`);
         ctx.set.status = 201;
         return SuccessResponse<ResponseAuth>({
-                refreshToken,
                 accessToken
             },
             "User registered successfully",
@@ -118,20 +145,33 @@ class UserService {
                 email: existingUser.email,
                 name: existingUser.name,
                 type: 'access',
+                id_user: existingUser.id
             });
             const refreshToken = generateJwt({
                 email: existingUser.email,
                 name: existingUser.name,
                 type: 'refresh',
+                id_user: existingUser.id
             });
-            existingUser.token.push(refreshToken);
+            await tokenModel.create({
+                token: refreshToken,
+                id_user: existingUser._id,
+                expireAt: new Date(Date.now() + 60 * 60 * 24 * 30 * 1000) // 30 days
+            }, {session})
             await existingUser.save({session});
+            ctx.cookie.refreshToken.set({
+                value: refreshToken,
+                expires: new Date(Date.now() + 60 * 60 * 24 * 30 * 1000), // 30 hari
+                httpOnly: true,
+                sameSite: 'lax',
+                secure: true, // true kalau di https
+                path: '/', // biasanya set path juga
+            })
             clientRedis.setEx(`refreshToken:${refreshToken}`, 60 * 60 * 24 * 30, refreshToken); // 30 days expiration
             logger.info(`User ${email} logged in with Google successfully`);
             ctx.set.status = 200;
             return SuccessResponse<ResponseAuth>({
                 accessToken,
-                refreshToken
             }, "User already exists", 200);
         } else {
             ctx.set.status = 404;
@@ -146,18 +186,85 @@ class UserService {
             ctx.set.status = 401;
             return ErrorResponse<null>("Invalid token", null, 401);
         }
-        const user = await UserModel.findOneAndUpdate(
-            {email: decoded.email},
-            {$pull: {token: token}},
-            {new: true, session}
-        );
-        if (!user) {
-            ctx.set.status = 404;
-            return ErrorResponse<null>("User not found", null, 404);
-        }
+
+        await tokenModel.deleteOne({token}, {session})
+        ctx.cookie.refreshToken.remove()
         logger.info(`User ${decoded.email} logged out successfully`);
         ctx.set.status = 200;
         return SuccessResponse<null>(null, "Logged out successfully", 200);
+    }
+
+    static async refreshToken(ctx: Context, session: mongoose.ClientSession): Promise<ResponseModel<ResponseAuth | null>> {
+        const refreshToken = ctx.cookie.refreshToken.value;
+        if (!refreshToken) {
+            ctx.set.status = 401;
+            return ErrorResponse<null>("Refresh token not found", null, 401);
+        }
+        const isExist = await clientRedis.get(`refreshToken:${refreshToken}`);
+        if (!isExist) {
+            const tokenInDb = await this.getRefreshTokenFromDb(refreshToken);
+            if (!tokenInDb) {
+                ctx.set.status = 401;
+                return ErrorResponse<null>("Invalid refresh token", null, 401);
+            }
+        }
+        const {expired, willExpireSoon} = checkExpiredToken(refreshToken);
+        const payload = decodeJwt(refreshToken);
+        if (!payload || !payload.email) {
+            ctx.set.status = 401;
+            return ErrorResponse<null>("Invalid refresh token", null, 401);
+        }
+        if (expired || willExpireSoon) {
+            const newRefreshToken = generateJwt({
+                email: payload.email,
+                name: payload.name,
+                type: 'refresh',
+                id_user: payload.id_user
+            });
+            const newAccessToken = generateJwt({
+                email: payload.email,
+                name: payload.name,
+                type: 'access',
+                id_user: payload.id_user
+            });
+            await tokenModel.updateOne({token: refreshToken}, {
+                token: newRefreshToken,
+                expireAt: new Date(Date.now() + 60 * 60 * 24 * 30 * 1000)
+            }, {session});
+            await Promise.all([
+                clientRedis.del(`refreshToken:${refreshToken}`),
+                clientRedis.setEx(`refreshToken:${newRefreshToken}`, 60 * 60 * 24 * 30, newRefreshToken) // 30 days expiration
+            ])
+            ctx.cookie.refreshToken.set({
+                value: newRefreshToken,
+                expires: new Date(Date.now() + 60 * 60 * 24 * 30 * 1000), // 30 hari
+                httpOnly: true,
+                sameSite: 'lax',
+                secure: true, // true kalau di https
+            })
+            logger.info(`Refresh and access token for user ${payload.email} refreshed successfully`);
+            ctx.set.status = 200;
+            return SuccessResponse<ResponseAuth>({
+                accessToken: newAccessToken,
+            }, "Token refreshed successfully", 200);
+        } else {
+            const newAccessToken = generateJwt({
+                email: payload.email,
+                name: payload.name,
+                type: 'access',
+                id_user: payload.id_user
+            });
+            logger.info(`Access token for user ${payload.email} refreshed successfully`);
+            ctx.set.status = 200;
+            return SuccessResponse<ResponseAuth>({
+                accessToken: newAccessToken,
+            }, "Token refreshed successfully", 200);
+        }
+    }
+
+    private static async getRefreshTokenFromDb(token: string): Promise<string | null> {
+        const storedToken = await tokenModel.findOne({token});
+        return storedToken ? storedToken.token : null;
     }
 
 }
