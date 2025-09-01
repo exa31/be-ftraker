@@ -17,10 +17,10 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t ghcr.io/${{ github.repository_owner }}/be-f-traker:latest .
+          docker build -t ghcr.io/${{ github.repository_owner }}/be-ftraker:latest .
 
       - name: Push Docker image to GHCR
-        run: docker push ghcr.io/${{ github.repository_owner }}/be-f-traker:latest
+        run: docker push ghcr.io/${{ github.repository_owner }}/be-ftraker:latest
 
       - name: Deploy to VPS
         run: |
@@ -31,7 +31,7 @@ jobs:
 
           ssh -p 31086 -i ~/.ssh/id_ed25519 deploy@${{ secrets.VPS_HOST }} << 'EOF'
             docker login ghcr.io -u ${{ github.repository_owner }} -p '${{ secrets.GHCR_TOKEN }}'
-            docker pull ghcr.io/${{ github.repository_owner }}/be-f-traker:latest
-            docker stop be-f-traker || true && docker rm be-f-traker || true
-            docker run --env-file /home/deploy/env_project/be_f_tracker/.env -d --name be-f-traker -p 3003:3000 ghcr.io/${{ github.repository_owner }}/be-f-traker:latest
+            docker pull ghcr.io/${{ github.repository_owner }}/be-ftraker:latest
+            docker stop be-ftraker || true && docker rm be-ftraker || true
+            docker run --env-file /home/deploy/env_project/be_f_tracker/.env -d --name be-ftraker -p 3003:3000 ghcr.io/${{ github.repository_owner }}/be-ftraker:latest
           EOF
