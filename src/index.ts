@@ -25,6 +25,13 @@ const app = new Elysia().onStart(
             )
             .use(TransactionRoutes)
     )
+    .all(
+        '*',
+        (ctx) => {
+            ctx.set.status = 404;
+            return {message: 'Route not found'};
+        },
+    )
     .listen(3000);
 
 console.log(
