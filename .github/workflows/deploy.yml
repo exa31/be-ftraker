@@ -28,9 +28,10 @@ jobs:
           echo "${{ secrets.SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -p 31086 -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
-
+          
           ssh -p 31086 -i ~/.ssh/id_ed25519 deploy@${{ secrets.VPS_HOST }} << 'EOF'
             docker login ghcr.io -u ${{ github.repository_owner }} -p '${{ secrets.GHCR_TOKEN }}'
             docker pull ghcr.io/${{ github.repository_owner }}/be-ftracker:latest
-            sudo systemctl restart be-ftracker.socket
+            docker stop be-ftracker || true && docker rm be-ftracker || true
+            docker run --env-file /home/deploy/env_project/be_f_tracker/.env -d --name be-ftracker -p 3003:3003 ghcr.io/${{ github.repository_owner }}/be-ftracker:latest
           EOF
