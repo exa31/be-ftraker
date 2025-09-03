@@ -39,5 +39,5 @@ jobs:
             --env-file /home/deploy/env_project/be_f_tracker/.env \
             -p 3003:3003 \
             ghcr.io/${{ github.repository_owner }}/be-ftracker:latest
-            systemctl restart be-ftracker.service
+            sudo systemctl restart be-ftracker.service
           EOF
