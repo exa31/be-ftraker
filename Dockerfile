@@ -12,7 +12,7 @@ RUN bun install --production
 COPY . .
 
 # Expose port (misalnya 3000)
-EXPOSE 3000
+EXPOSE 3003
 
 # Jalankan aplikasi
 CMD ["bun", "run", "start"]

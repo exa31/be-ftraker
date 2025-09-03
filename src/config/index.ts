@@ -1,5 +1,5 @@
 class Config {
-    public static readonly PORT = 8080;
+    public static readonly PORT = process.env.PORT || 3003;
     public static readonly MONGO_URI = process.env.MONGO_DB_URL;
     public static readonly MODE = process.env.NODE_ENV === 'development' ? 'development' : 'production';
     public static readonly JWT_SECRET = process.env.SECRET_KEY;

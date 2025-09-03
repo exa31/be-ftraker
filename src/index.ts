@@ -5,6 +5,7 @@ import TransactionRoutes from "./modules/transaction/transactionRoutes";
 import {logrouting} from "./middleware/logrouting";
 import {logrequest} from "./middleware/logrequest";
 import {validateToken} from "./middleware/validateToken";
+import Config from "./config";
 
 const app = new Elysia().onStart(
     (server) => {
@@ -32,7 +33,7 @@ const app = new Elysia().onStart(
             return {message: 'Route not found'};
         },
     )
-    .listen(3000);
+    .listen(Config.PORT);
 
 console.log(
     `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`
