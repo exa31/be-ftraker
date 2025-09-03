@@ -32,12 +32,5 @@ jobs:
           ssh -p 31086 -i ~/.ssh/id_ed25519 deploy@${{ secrets.VPS_HOST }} << 'EOF'
             docker login ghcr.io -u ${{ github.repository_owner }} -p '${{ secrets.GHCR_TOKEN }}'
             docker pull ghcr.io/${{ github.repository_owner }}/be-ftracker:latest
-            docker stop be-ftracker || true
-            docker rm be-ftracker || true
-            docker create \
-            --name be-ftracker \
-            --env-file /home/deploy/env_project/be_f_tracker/.env \
-            -p 3003:3003 \
-            ghcr.io/${{ github.repository_owner }}/be-ftracker:latest
-            sudo systemctl restart be-ftracker.service
+            sudo systemctl restart be-ftracker.socket
           EOF
