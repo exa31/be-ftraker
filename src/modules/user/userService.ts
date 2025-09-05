@@ -291,6 +291,7 @@ class UserService {
             ctx.set.status = 200;
             return SuccessResponse<ResponseAuth>({
                 accessToken: newAccessToken,
+                refreshToken: refreshToken
             }, "Token refreshed successfully", 200);
         }
     }
