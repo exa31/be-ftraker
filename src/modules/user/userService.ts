@@ -69,6 +69,7 @@ class UserService {
         ctx.set.status = 200;
         return SuccessResponse<ResponseAuth>({
                 accessToken,
+                refreshToken,
             },
             "Login successful",
             200
@@ -122,7 +123,8 @@ class UserService {
         logger.info(`User ${email} registered successfully`);
         ctx.set.status = 201;
         return SuccessResponse<ResponseAuth>({
-                accessToken
+                accessToken,
+                refreshToken,
             },
             "User registered successfully",
             201
@@ -185,6 +187,7 @@ class UserService {
             ctx.set.status = 200;
             return SuccessResponse<ResponseAuth>({
                 accessToken,
+                refreshToken,
             }, "User already exists", 200);
         } else {
             ctx.set.status = 404;
@@ -194,6 +197,11 @@ class UserService {
 
     static async logout(ctx: Context, session: mongoose.ClientSession): Promise<ResponseModel<string | null>> {
         const {token} = ctx.body as { token: string };
+        const clientRedis = await getClientRedis();
+        if (!clientRedis) {
+            ctx.set.status = 500;
+            return ErrorResponse<null>("Redis connection error", null, 500);
+        }
         const decoded = decodeJwt(token)
         if (!decoded || !decoded.email) {
             ctx.set.status = 401;
@@ -202,13 +210,17 @@ class UserService {
 
         await tokenModel.deleteOne({token}, {session})
         ctx.cookie.refreshToken.remove()
+        await clientRedis.del(`refreshToken:${token}`);
         logger.info(`User ${decoded.email} logged out successfully`);
         ctx.set.status = 200;
         return SuccessResponse<null>(null, "Logged out successfully", 200);
     }
 
     static async refreshToken(ctx: Context, session: mongoose.ClientSession): Promise<ResponseModel<ResponseAuth | null>> {
-        const refreshToken = ctx.cookie.refreshToken.value;
+        let refreshToken = ctx.cookie.refreshToken.value;
+        if (!refreshToken) {
+            refreshToken = ctx.headers.authorization?.split(' ')[1];
+        }
         const clientRedis = await getClientRedis();
         if (!clientRedis) {
             ctx.set.status = 500;
@@ -266,6 +278,7 @@ class UserService {
             ctx.set.status = 200;
             return SuccessResponse<ResponseAuth>({
                 accessToken: newAccessToken,
+                refreshToken: newRefreshToken
             }, "Token refreshed successfully", 200);
         } else {
             const newAccessToken = generateJwt({
