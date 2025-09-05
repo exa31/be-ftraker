@@ -50,12 +50,16 @@ class UserService {
             type: 'refresh',
             id_user: user.id
         });
-        await tokenModel.create({
-            token: refreshToken,
-            id_user: user._id,
-            expireAt: new Date(Date.now() + 60 * 60 * 24 * 30 * 1000) // 30 days
-        })
-        await user.save({session});
+
+        await Promise.all([
+            new tokenModel({
+                token: refreshToken,
+                id_user: user._id,
+                expireAt: new Date(Date.now() + 60 * 60 * 24 * 30 * 1000) // 30 days
+            }).save({session}),
+            user.save({session}),
+        ])
+
         await clientRedis.setEx(`refreshToken:${refreshToken}`, 60 * 60 * 24 * 30, refreshToken); // 30 days expiration
         ctx.cookie.refreshToken.set({
             value: refreshToken,
@@ -105,12 +109,15 @@ class UserService {
             type: 'refresh',
             id_user: newUser.id
         });
-        await tokenModel.create({
-            token: refreshToken,
-            id_user: newUser._id,
-            expireAt: new Date(Date.now() + 60 * 60 * 24 * 30 * 1000) // 30 days
-        }, {session})
-        await newUser.save({session});
+        await Promise.all([
+            newUser.save({session}),
+            new tokenModel({
+                token: refreshToken,
+                id_user: newUser.id,
+                expireAt: new Date(Date.now() + 60 * 60 * 24 * 30 * 1000) // 30 days
+            }).save({session})
+        ])
+
         ctx.cookie.refreshToken.set({
             value: refreshToken,
             expires: new Date(Date.now() + 60 * 60 * 24 * 30 * 1000), // 30 hari
@@ -168,12 +175,12 @@ class UserService {
                 type: 'refresh',
                 id_user: existingUser.id
             });
-            await tokenModel.create({
+            await new tokenModel({
                 token: refreshToken,
-                id_user: existingUser._id,
+                id_user: existingUser.id,
                 expireAt: new Date(Date.now() + 60 * 60 * 24 * 30 * 1000) // 30 days
-            }, {session})
-            await existingUser.save({session});
+            }).save({session})
+
             ctx.cookie.refreshToken.set({
                 value: refreshToken,
                 expires: new Date(Date.now() + 60 * 60 * 24 * 30 * 1000), // 30 hari

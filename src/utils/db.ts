@@ -16,14 +16,14 @@ export const wrappingDbTransaction = async <TCTX extends Context, T>(ctx: TCTX, 
         return result;
     } catch (error) {
         await session.abortTransaction();
-        logger.error(`Error in register handler: ${JSON.stringify(error)}`);
+        logger.error(`${JSON.stringify(error)}`);
         if (error instanceof zod.ZodError) {
             const message = formatErrorValidation(error);
             ctx.set.status = 400;
             return ErrorResponse<Record<string, string>>("Validation error", message, 400);
         } else if (error instanceof MongoServerError && error.code === 11000) {
-            const field = Object.keys((error as any).keyPattern)[0];
-            const value = (error as any).keyValue[field];
+            const field = Object.keys(error.keyPattern)[0];
+            const value = error.keyValue[field];
 
             ctx.set.status = 409;
             return ErrorResponse<string>(
