@@ -6,14 +6,17 @@ import {logrouting} from "./middleware/logrouting";
 import {logrequest} from "./middleware/logrequest";
 import {validateToken} from "./middleware/validateToken";
 import Config from "./config";
+import {cors} from "@elysiajs/cors";
 
 const app = new Elysia().onStart(
     (server) => {
         logrouting(server);
     }
-).onRequest((ctx) => {
-    logrequest(ctx);
-})
+)
+    .use(cors())
+    .onRequest((ctx) => {
+        logrequest(ctx);
+    })
     .group('/auth/v1', (group) =>
         group.use(UserRoutes)
     ).group(
