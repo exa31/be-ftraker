@@ -203,7 +203,17 @@ class UserService {
     }
 
     static async logout(ctx: Context, session: mongoose.ClientSession): Promise<ResponseModel<string | null>> {
-        const {token} = ctx.body as { token: string };
+        let {token} = ctx.body as { token: string };
+        if (!token) {
+            const tokenFromCookie = ctx.cookie.refreshToken.value;
+            if (tokenFromCookie) {
+                token = tokenFromCookie;
+            } else {
+                ctx.set.status = 401;
+                return ErrorResponse<null>("Refresh token not found", null, 401);
+            }
+
+        }
         const clientRedis = await getClientRedis();
         if (!clientRedis) {
             ctx.set.status = 500;
