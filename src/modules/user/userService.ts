@@ -108,14 +108,13 @@ class UserService {
             type: 'refresh',
             id_user: newUser.id
         });
-        await Promise.all([
-            newUser.save({session}),
-            new tokenModel({
-                token: refreshToken,
-                id_user: newUser.id,
-                expireAt: new Date(Date.now() + 60 * 60 * 24 * 30 * 1000) // 30 days
-            }).save({session})
-        ])
+        await newUser.save({session})
+        await new tokenModel({
+            token: refreshToken,
+            id_user: newUser.id,
+            expireAt: new Date(Date.now() + 60 * 60 * 24 * 30 * 1000) // 30 days
+        }).save({session})
+
 
         ctx.cookie.refreshToken.set({
             value: refreshToken,
