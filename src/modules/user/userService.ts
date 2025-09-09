@@ -51,14 +51,13 @@ class UserService {
             id_user: user.id
         });
 
-        await Promise.all([
-            new tokenModel({
-                token: refreshToken,
-                id_user: user._id,
-                expireAt: new Date(Date.now() + 60 * 60 * 24 * 30 * 1000) // 30 days
-            }).save({session}),
-            user.save({session}),
-        ])
+
+        await new tokenModel({
+            token: refreshToken,
+            id_user: user._id,
+            expireAt: new Date(Date.now() + 60 * 60 * 24 * 30 * 1000) // 30 days
+        }).save({session})
+
 
         await clientRedis.setEx(`refreshToken:${refreshToken}`, 60 * 60 * 24 * 30, refreshToken); // 30 days expiration
         ctx.cookie.refreshToken.set({
