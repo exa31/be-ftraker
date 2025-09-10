@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <title>Laporan Mingguan</title>
+</head>
+<body style="font-family: Arial, sans-serif; background: #f6f9fc; padding: 20px;">
+<div style="max-width: 600px; margin: auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+    <div style="background: #16a34a; color: white; padding: 16px; text-align: center;">
+        <h2 style="margin: 0;">📊 Laporan Keuangan Mingguan</h2>
+    </div>
+    <div style="padding: 20px;">
+        <p>Halo <b>{{name}}</b>,</p>
+        <p>Berikut adalah ringkasan laporan keuangan Anda untuk minggu ini:</p>
+
+        <table width="100%" cellpadding="10" cellspacing="0" style="border-collapse: collapse; margin-top: 10px;">
+            <tr style="background: #f0fdf4; border-bottom: 1px solid #e2e8f0;">
+                <td><b>Income</b></td>
+                <td align="right" style="color: #16a34a; font-weight: bold;">Rp {{income}}</td>
+            </tr>
+            <tr style="background: #fef2f2; border-bottom: 1px solid #e2e8f0;">
+                <td><b>Expense</b></td>
+                <td align="right" style="color: #dc2626; font-weight: bold;">Rp {{expense}}</td>
+            </tr>
+            <tr style="background: #f9fafb;">
+                <td><b>Balance</b></td>
+                <td align="right" style="color: #111827; font-weight: bold;">Rp {{balance}}</td>
+            </tr>
+        </table>
+
+        <p style="margin-top: 20px;">Terus pantau pengeluaran dan pemasukan Anda agar tetap sehat secara finansial
+            💪.</p>
+
+        <p>Salam,<br/><b>FTracker</b></p>
+    </div>
+    <div style="background: #f3f4f6; color: #6b7280; text-align: center; padding: 12px; font-size: 12px;">
+        Email ini dikirim otomatis. Jangan balas langsung ke email ini.
+    </div>
+</div>
+</body>
+</html>

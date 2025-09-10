@@ -6,6 +6,10 @@ class Config {
     public static readonly GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
     public static readonly GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
     public static readonly REDIS_URL = process.env.REDIS_URL;
+    public static readonly SMTP_HOST = process.env.SMTP_HOST;
+    public static readonly SMTP_PORT = process.env.SMTP_PORT;
+    public static readonly SMTP_USER = process.env.SMTP_USER;
+    public static readonly SMTP_PASS = process.env.SMTP_PASS;
 }
 
 export default Config;

@@ -7,8 +7,19 @@ import {ErrorResponse, SuccessResponse} from "../../utils/response";
 import TransactionModel from "./transactionModel";
 import {AuthContext} from "../../types/context";
 import useSelectedView from "../../utils/selectedViewPeriode";
-import {getTransaction, responseCreateTransaction, responseUpdateTransaction} from "../../types/transaction";
+import {
+    AggregateTransactionSummary,
+    getTransaction,
+    responseCreateTransaction,
+    responseUpdateTransaction
+} from "../../types/transaction";
+import {toZonedTime} from "date-fns-tz";
 import mongoose from "mongoose";
+import {subDays} from "date-fns";
+import {formatCurrency} from "../../utils/currency";
+import mailService from "../mail/mailService";
+import path from "path";
+import fs from "fs";
 
 class TransactionService {
 
@@ -110,6 +121,90 @@ class TransactionService {
         logger.info(`Transaction with id ${transactionId} deleted successfully for user ${user.email}`);
         ctx.set.status = 200;
         return SuccessResponse<null>(null, "Transaction deleted successfully", 200);
+    }
+
+    private static async getWeeklySummaryEmail(): Promise<AggregateTransactionSummary[]> {
+        try {
+            const timeZone = 'Asia/Jakarta';
+            // ambil waktu sekarang UTC → konversi ke WIB
+            const nowUtc = new Date();
+            const nowWib = toZonedTime(nowUtc, timeZone);
+
+            // hitung 7 hari ke belakang dari WIB
+            const sevenDaysAgo = subDays(nowWib, 7);
+            return await TransactionModel.aggregate([
+                {
+                    $match: {
+                        createdAt: {$gte: sevenDaysAgo}
+                    }
+                },
+                {
+                    $group: {
+                        _id: "$user", // grouping berdasarkan user
+                        income: {
+                            $sum: {
+                                $cond: [{$eq: ["$type", "Income"]}, "$amount", 0]
+                            }
+                        },
+                        expense: {
+                            $sum: {
+                                $cond: [{$eq: ["$type", "Expanse"]}, "$amount", 0]
+                            }
+                        }
+                    }
+                },
+                {
+                    $lookup: {
+                        from: "users",          // nama collection user
+                        localField: "_id",      // _id hasil group = user id
+                        foreignField: "_id",    // match ke _id user
+                        as: "user"
+                    }
+                },
+                {
+                    $unwind: "$user" // biar "user" jadi object, bukan array
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        userId: "$_id",
+                        email: "$user.email",
+                        name: "$user.name",
+                        income: 1,
+                        expense: 1
+                    }
+                }
+            ]) as AggregateTransactionSummary[];
+        } catch (error) {
+            logger.error(`Error in getWeeklySummaryEmail: ${JSON.stringify(error)}`);
+            throw error;
+        }
+    }
+
+    static async generateWeeklyReports(): Promise<void> {
+        try {
+            const reports = await TransactionService.getWeeklySummaryEmail();
+            // baca templates HTML
+            const templatePath = path.join(__dirname, "templates", "weekly_report.html");
+            let templateHtml = fs.readFileSync(templatePath, "utf-8");
+            for (const data of reports) {
+                await new Promise(resolve => setTimeout(resolve, 5000)); // delay 1 detik per email
+                const reportHtml = templateHtml
+                    .replace("{{name}}", data.name)
+                    .replace("{{income}}", formatCurrency(data.income))
+                    .replace("{{expense}}", formatCurrency(data.expense))
+                    .replace("{{balance}}", formatCurrency(data.income - data.expense));
+                // simpan reportHtml ke file
+                mailService.sendMail({
+                    to: data.email,
+                    subject: "Weekly Transaction Summary",
+                    html: reportHtml
+                })
+            }
+        } catch (error) {
+            logger.error(`Error in generateWeeklyReports: ${JSON.stringify(error)}`);
+            throw error;
+        }
     }
 }
 

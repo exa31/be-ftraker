@@ -7,6 +7,7 @@ import {logrequest} from "./middleware/logrequest";
 import {validateToken} from "./middleware/validateToken";
 import Config from "./config";
 import {cors} from "@elysiajs/cors";
+import './utils/cron'
 
 const app = new Elysia().onStart(
     (server) => {

@@ -8,3 +8,11 @@ export type getTransaction = {
     current: Transaction[];
     last: Transaction[]
 }
+
+export type AggregateTransactionSummary = {
+    income: number;
+    expense: number;
+    userId: string;
+    email: string;
+    name: string;
+}
