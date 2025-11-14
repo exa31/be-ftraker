@@ -1,30 +1,32 @@
-# Gunakan Bun official image
-FROM oven/bun:1 AS build
+# ===== STAGE 1: BUILD =====
+FROM node:20-alpine AS build
 
-# Set working directory
 WORKDIR /app
 
-# Copy package file dan install depedensi
-COPY bun.lock package.json ./
-RUN bun install
+# Copy package files
+COPY package.json package-lock.json* ./
 
-# Copy semua file project
+# Install deps (gunakan clean cache + npm ci utk production consistency)
+RUN npm ci
+
+# Copy semua source code
 COPY . .
 
-# Build project
-RUN bun run build
+# Build TypeScript -> dist
+RUN npm run build
 
-# ======== STAGE RUNTIME (lebih kecil & ringan) ========
-FROM oven/bun:1 AS runtime
+
+# ===== STAGE 2: RUNTIME =====
+FROM node:20-alpine AS runtime
 
 WORKDIR /app
 
-# Copy hasil build + node_modules
-COPY --from=build /app/dist ./dist
+# Copy hanya node_modules dan output build
 COPY --from=build /app/node_modules ./node_modules
-COPY package.json bun.lock ./
+COPY --from=build /app/dist ./dist
+COPY package.json ./
 
 EXPOSE 3003
 
 # Jalankan aplikasi
-CMD ["bun", "run", "dist/index.js"]
+CMD ["node", "dist/index.js"]

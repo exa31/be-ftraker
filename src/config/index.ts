@@ -1,3 +1,7 @@
+import dotenv from "dotenv";
+
+dotenv.config();
+
 class Config {
     public static readonly PORT = process.env.PORT || 3003;
     public static readonly MONGO_URI = process.env.MONGO_DB_URL;

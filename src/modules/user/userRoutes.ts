@@ -1,26 +1,14 @@
-import {Elysia} from "elysia";
+import {Router} from "express";
 import UserService from "./userService";
 import {wrappingDbTransaction} from "../../utils/db";
 
-const UserRoutes = new Elysia()
-    .post('/login', async (ctx) => {
-        return await wrappingDbTransaction(ctx, UserService.login);
-    })
-    .post('/register', async (ctx) => {
-        return await wrappingDbTransaction(ctx, UserService.register);
-    })
-    .post('/login-with-google', async (ctx) => {
-        return await wrappingDbTransaction(ctx, UserService.loginWithGoogle);
-    })
-    .post('/logout', async (ctx) => {
-        return await wrappingDbTransaction(ctx, UserService.logout);
-    })
-    .post('/refresh', async (ctx) => {
-        return await wrappingDbTransaction(ctx, UserService.refreshToken);
-    })
+const router = Router();
 
-export default UserRoutes;
+// langsung bungkus tiap service dgn transaction wrapper
+router.post("/login", wrappingDbTransaction(UserService.login));
+router.post("/register", wrappingDbTransaction(UserService.register));
+router.post("/login-with-google", wrappingDbTransaction(UserService.loginWithGoogle));
+router.post("/logout", wrappingDbTransaction(UserService.logout));
+router.post("/refresh", wrappingDbTransaction(UserService.refreshToken));
 
-
-
-
+export default router;

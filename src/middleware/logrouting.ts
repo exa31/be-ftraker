@@ -1,11 +1,20 @@
 import Config from "../config";
-import {MergeElysiaInstances} from "elysia";
+import {Application} from "express";
 
-export const logrouting = (ctx: MergeElysiaInstances) => {
-    if (Config.MODE === 'development') {
+export const logRouting = (app: Application) => {
+    if (Config.MODE === "development") {
         console.log("Available routes:");
-        ctx.routes.forEach(route => {
-            console.log(`- ${route.method} ${route.path}`);
+
+        const stack = app._router?.stack || [];
+
+        stack.forEach((layer: any) => {
+            if (layer.route) {
+                const methods = Object.keys(layer.route.methods)
+                    .map(m => m.toUpperCase())
+                    .join(", ");
+
+                console.log(`- ${methods} ${layer.route.path}`);
+            }
         });
     }
-}
+};

@@ -1,32 +1,28 @@
-import {Elysia} from "elysia";
+import {Router} from "express";
 import TransactionService from "./transactionService";
-import {AuthContext} from "../../types/context";
 import {wrappingDbTransaction} from "../../utils/db";
 
-const TransactionRoutes = new Elysia()
-    .get(
-        '/transactions',
-        async (ctx: AuthContext) => {
-            return await TransactionService.getTransactions(ctx)
-        }
-    )
-    .post(
-        '/transactions',
-        async (ctx: AuthContext) => {
-            return await wrappingDbTransaction(ctx, TransactionService.createTransaction)
-        }
-    )
-    .put(
-        '/transactions/:transactionId',
-        async (ctx: AuthContext) => {
-            return await wrappingDbTransaction(ctx, TransactionService.updateTransaction)
-        }
-    )
-    .delete(
-        '/transactions/:transactionId',
-        async (ctx: AuthContext) => {
-            return await wrappingDbTransaction(ctx, TransactionService.deleteTransaction)
-        }
-    )
+const router = Router();
 
-export default TransactionRoutes
+// GET tanpa transaction → tidak perlu session
+router.get("/transactions", TransactionService.getTransactions);
+
+// POST pakai transaction wrapper
+router.post(
+    "/transactions",
+    wrappingDbTransaction(TransactionService.createTransaction)
+);
+
+// PUT pakai transaction wrapper
+router.put(
+    "/transactions/:transactionId",
+    wrappingDbTransaction(TransactionService.updateTransaction)
+);
+
+// DELETE pakai transaction wrapper
+router.delete(
+    "/transactions/:transactionId",
+    wrappingDbTransaction(TransactionService.deleteTransaction)
+);
+
+export default router;

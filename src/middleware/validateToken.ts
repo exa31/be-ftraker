@@ -1,36 +1,57 @@
-import {Context} from "elysia";
-import {ErrorResponse} from "../utils/response";
 import {verifyJwt} from "../utils/jwt";
+import {ErrorResponse} from "../utils/response";
 import logger from "../utils/logger";
+import {NextFunction, Request, Response} from "express";
 
-export const validateToken = (ctx: Context) => {
-    // Middleware to validate JWT token
-    logger.info(`Validating token for request: ${ctx.request.method} ${ctx.request.url.split('/').slice(3).join('/')}`);
-    const token = ctx.request.headers.get('Authorization')?.split(' ')[1];
+export const validateToken = (req: Request, res: Response, next: NextFunction) => {
+    logger.info(
+        `Validating token for request: ${req.method} ${req.originalUrl}`
+    );
+
+    const authHeader = req.headers["authorization"];
+    const token = authHeader?.split(" ")[1];
+
     if (!token) {
         logger.warn("Unauthorized access attempt: No token provided");
-        ctx.set.status = 401;
-        throw ErrorResponse<null>(
-            "Unauthorized: No token provided",
-            null,
-            401
-        )
-    }
-    // Assuming you have a function to verify the token
-    const user = verifyJwt(token, true, 'access');
-    if (!user) {
-        logger.warn("Unauthorized access attempt: Invalid token");
-        ctx.set.status = 401;
-        throw ErrorResponse<null>(
-            "Unauthorized: Invalid token",
-            null,
-            401
+
+        return res.status(401).json(
+            ErrorResponse(
+                "Unauthorized: No token provided",
+                null,
+                401
+            )
         );
     }
-    return {
-        user: {
-            ...user,
-            id: user.id_user
+
+    try {
+        const user = verifyJwt(token, true, "access");
+
+        if (!user) {
+            logger.warn("Unauthorized access attempt: Invalid token");
+
+            return res.status(401).json(
+                ErrorResponse(
+                    "Unauthorized: Invalid token",
+                    null,
+                    401
+                )
+            );
         }
+
+        req.user = {
+            ...user,
+        };
+
+        next();
+    } catch (err) {
+        logger.error("JWT verification error", err);
+
+        return res.status(401).json(
+            ErrorResponse(
+                "Unauthorized: Invalid token",
+                null,
+                401
+            )
+        );
     }
-}
+};
