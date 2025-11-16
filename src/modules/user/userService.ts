@@ -226,7 +226,7 @@ class UserService {
     }
 
     static async refreshToken(req: Request, res: Response, session: mongoose.ClientSession) {
-        let refreshToken = req.cookies?.refreshToken || req.headers.authorization?.split(" ")[1];
+        let refreshToken = req.cookies?.refreshToken || req.headers.authorization?.split(" ")[1] || req.body.refreshToken;
 
         const clientRedis = await getClientRedis();
         if (!clientRedis) {
