@@ -56,7 +56,7 @@ class UserService {
         res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
             secure: true,
-            sameSite: "lax",
+            sameSite: "none",
             path: "/",
             expires: new Date(Date.now() + 60 * 60 * 24 * 30 * 1000)
         });
@@ -110,7 +110,7 @@ class UserService {
         res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
             secure: true,
-            sameSite: "lax",
+            sameSite: "none",
             path: "/",
             expires: new Date(Date.now() + 60 * 60 * 24 * 30 * 1000)
         });
@@ -179,7 +179,7 @@ class UserService {
         res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
             secure: true,
-            sameSite: "lax",
+            sameSite: "none",
             path: "/",
             expires: new Date(Date.now() + 60 * 60 * 24 * 30 * 1000)
         });
@@ -284,7 +284,7 @@ class UserService {
             res.cookie("refreshToken", newRefreshToken, {
                 httpOnly: true,
                 secure: true,
-                sameSite: "lax",
+                sameSite: "none",
                 path: "/",
                 expires: new Date(Date.now() + 60 * 60 * 24 * 30 * 1000)
             });
