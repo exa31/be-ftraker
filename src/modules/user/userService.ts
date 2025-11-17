@@ -28,7 +28,7 @@ class UserService {
         }
 
         if (!user || !(await comparePassword(password, user.password))) {
-            return res.status(401).json(ErrorResponse("Email or Password is wrong", null, 401));
+            return res.status(400).json(ErrorResponse("Email or Password is wrong", null, 400));
         }
 
         const accessToken = generateJwt({
@@ -147,7 +147,7 @@ class UserService {
         const {email, email_verified} = ticket.getPayload() as any;
 
         if (!email_verified) {
-            return res.status(401).json(ErrorResponse("Email not verified", null, 401));
+            return res.status(400).json(ErrorResponse("Email not verified", null, 400));
         }
 
         const existingUser = await UserModel.findOne({email});
@@ -234,7 +234,7 @@ class UserService {
         }
 
         if (!refreshToken) {
-            return res.status(401).json(ErrorResponse("Refresh token not found", null, 401));
+            return res.status(409).json(ErrorResponse("Refresh token not found", null, 400));
         }
 
         const redisToken = await clientRedis.get(`refreshToken:${refreshToken}`);

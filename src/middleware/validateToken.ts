@@ -14,11 +14,11 @@ export const validateToken = (req: Request, res: Response, next: NextFunction) =
     if (!token) {
         logger.warn("Unauthorized access attempt: No token provided");
 
-        return res.status(401).json(
+        return res.status(400).json(
             ErrorResponse(
                 "Unauthorized: No token provided",
                 null,
-                401
+                400
             )
         );
     }
