@@ -2,7 +2,7 @@ import zod from "zod";
 
 export const createTransactionBodySchema = zod.object({
     amount: zod.number().min(1000, "Amount must be a positive number"),
-    type: zod.enum(["Income", "Expense"], "Type must be either 'income' or 'expense'"),
+    type: zod.enum(["Income", "Expanse"], "Type must be either 'income' or 'expense'"),
     description: zod.string().min(3, "Description is required"),
     createdAt: zod.string().optional().refine((date) => {
         if (date) {
@@ -17,7 +17,7 @@ export const createTransactionBodySchema = zod.object({
 
 export const updateTransactionBodySchema = zod.object({
     amount: zod.number().min(1000, "Amount must be a positive number"),
-    type: zod.enum(["Income", "Expense"], "Type must be either 'income' or 'expense'"),
+    type: zod.enum(["Income", "Expanse"], "Type must be either 'income' or 'expense'"),
     description: zod.string().min(3, "Description is required"),
     createdAt: zod.string().optional().refine((date) => {
         if (date) {
