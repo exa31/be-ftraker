@@ -254,7 +254,14 @@ class UserService {
 
         const {expired, willExpireSoon} = checkExpiredToken(refreshToken);
 
-        if (expired || willExpireSoon) {
+        if (expired) {
+            await tokenModel.deleteOne({token: refreshToken}, {session});
+            await clientRedis.del(`refreshToken:${refreshToken}`);
+
+            return res.status(401).json(ErrorResponse("Refresh token has expired", null, 401));
+        }
+
+        if (willExpireSoon) {
             const newRefreshToken = generateJwt({
                 email: payload.email,
                 name: payload.name,
