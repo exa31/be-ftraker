@@ -7,6 +7,9 @@ const router = Router();
 // GET tanpa transaction → tidak perlu session
 router.get("/transactions", TransactionService.getTransactions);
 
+// GET by ID tanpa transaction → tidak perlu session
+router.get("/transactions/:transactionId", TransactionService.getTransactionById);
+
 // POST pakai transaction wrapper
 router.post(
     "/transactions",

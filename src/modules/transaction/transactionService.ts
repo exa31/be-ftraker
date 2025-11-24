@@ -58,6 +58,19 @@ class TransactionService {
         }
     }
 
+    static async getTransactionById(req: Request, res: Response) {
+        const {transactionId} = req.params;
+        const user = req.user!;
+
+        const transaction = await TransactionModel.findOne({_id: transactionId, user: user.id_user});
+
+        if (!transaction) {
+            return res.status(404).json(ErrorResponse("Not Found", "Transaction not found", 404));
+        }
+
+        return res.status(200).json(SuccessResponse(transaction, "Transaction retrieved successfully", 200));
+    }
+
     static async createTransaction(req: Request, res: Response, session: mongoose.ClientSession) {
         validate(req.body, createTransactionBodySchema);
 
