@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
-import { ErrorResponse } from '../../utils/response';
-import { verifyHmacSignature } from '../../utils/hmac';
-import Config from '../../config';
-import logger from '../../utils/logger';
+import { ErrorResponse } from '../utils/response';
+import { verifyHmacSignature } from '../utils/hmac';
+import Config from '../config';
+import logger from '../utils/logger';
 
 /**
  * Middleware to verify N8N webhook integrity
