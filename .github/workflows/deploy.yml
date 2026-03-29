@@ -33,13 +33,13 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -p 31080 -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
           
-          ssh -p 31080 -i ~/.ssh/id_ed25519 deploy@${{ secrets.VPS_HOST }} << 'EOF'
-            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+          ssh -p 31080 -i ~/.ssh/id_ed25519 deploy@${{ secrets.VPS_HOST }} << EOF
+          export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 
-            # Patch the deployment to use the new SHA tag
-            kubectl set image deployment/be-ftracker -n dev-coffe \
-              be-ftracker=ghcr.io/${{ github.repository_owner }}/be-ftracker:${{ steps.vars.outputs.sha }}
+          # Patch the deployment to use the new SHA tag
+          kubectl set image deployment/be-ftracker -n dev-coffe \
+            be-ftracker=ghcr.io/${{ github.repository_owner }}/be-ftracker:${{ steps.vars.outputs.sha }}
 
-            # Optional: show rollout
-            # kubectl rollout status deployment/transaction-service-coffe -n dev-coffe
+          # Optional: show rollout
+          # kubectl rollout status deployment/transaction-service-coffe -n dev-coffe
           EOF
