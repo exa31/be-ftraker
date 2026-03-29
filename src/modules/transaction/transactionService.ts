@@ -1,11 +1,11 @@
-import {Request, Response} from "express";
+import { Request, Response } from "express";
 import logger from "../../utils/logger";
-import {formatErrorValidation, validate} from "../../utils/validation";
-import {createTransactionBodySchema, getTransactionQuerySchema, updateTransactionBodySchema} from "./transactionSchema";
-import {ErrorResponse, SuccessResponse} from "../../utils/response";
+import { formatErrorValidation, validate } from "../../utils/validation";
+import { createTransactionBodySchema, getTransactionQuerySchema, updateTransactionBodySchema, n8nWebhookBodySchema } from "./transactionSchema";
+import { ErrorResponse, SuccessResponse } from "../../utils/response";
 import TransactionModel from "./transactionModel";
 import useSelectedViewPeriode from "../../utils/selectedViewPeriode";
-import {ZodError} from "zod";
+import { ZodError } from "zod";
 import mongoose from "mongoose";
 
 class TransactionService {
@@ -14,14 +14,14 @@ class TransactionService {
         try {
             validate(req.query, getTransactionQuerySchema);
 
-            const {view} = req.query as any;
+            const { view } = req.query as any;
             const user = req.user!;
-            const {lastPeriode, currentPeriode} = useSelectedViewPeriode(view);
+            const { lastPeriode, currentPeriode } = useSelectedViewPeriode(view);
 
             if (view === "All") {
                 const all = await TransactionModel
-                    .find({user: user.id_user})
-                    .sort({createdAt: -1});
+                    .find({ user: user.id_user })
+                    .sort({ createdAt: -1 });
 
                 return res.status(200).json(SuccessResponse({
                     current: all,
@@ -30,16 +30,16 @@ class TransactionService {
             }
 
             const current = await TransactionModel
-                .find({user: user.id_user})
+                .find({ user: user.id_user })
                 .gte("createdAt", currentPeriode().start)
                 .lte("createdAt", currentPeriode().end)
-                .sort({createdAt: -1});
+                .sort({ createdAt: -1 });
 
             const last = await TransactionModel
-                .find({user: user.id_user})
+                .find({ user: user.id_user })
                 .gte("createdAt", lastPeriode().start)
                 .lte("createdAt", lastPeriode().end)
-                .sort({createdAt: -1});
+                .sort({ createdAt: -1 });
 
             return res.status(200).json(SuccessResponse({
                 current,
@@ -59,10 +59,10 @@ class TransactionService {
     }
 
     static async getTransactionById(req: Request, res: Response) {
-        const {transactionId} = req.params;
+        const { transactionId } = req.params;
         const user = req.user!;
 
-        const transaction = await TransactionModel.findOne({_id: transactionId, user: user.id_user});
+        const transaction = await TransactionModel.findOne({ _id: transactionId, user: user.id_user });
 
         if (!transaction) {
             return res.status(404).json(ErrorResponse("Not Found", "Transaction not found", 404));
@@ -74,7 +74,7 @@ class TransactionService {
     static async createTransaction(req: Request, res: Response, session: mongoose.ClientSession) {
         validate(req.body, createTransactionBodySchema);
 
-        const {amount, type, description, createdAt} = req.body;
+        const { amount, type, description, createdAt } = req.body;
         const user = req.user!;
 
         const transaction = new TransactionModel({
@@ -85,7 +85,7 @@ class TransactionService {
             createdAt
         });
 
-        await transaction.save({session});
+        await transaction.save({ session });
 
         return res.status(201).json(SuccessResponse(transaction, "Transaction created successfully", 201));
     }
@@ -93,11 +93,11 @@ class TransactionService {
     static async updateTransaction(req: Request, res: Response, session: mongoose.ClientSession) {
         validate(req.body, updateTransactionBodySchema);
 
-        const {amount, type, description, createdAt} = req.body;
-        const {transactionId} = req.params;
+        const { amount, type, description, createdAt } = req.body;
+        const { transactionId } = req.params;
         const user = req.user!;
 
-        const transaction = await TransactionModel.findOne({_id: transactionId, user: user.id_user});
+        const transaction = await TransactionModel.findOne({ _id: transactionId, user: user.id_user });
 
         if (!transaction) {
             return res.status(404).json(ErrorResponse("Not Found", "Transaction not found", 404));
@@ -108,18 +108,18 @@ class TransactionService {
         transaction.description = description;
         transaction.createdAt = createdAt ? new Date(createdAt) : transaction.createdAt;
 
-        await transaction.save({session});
+        await transaction.save({ session });
 
         return res.status(200).json(SuccessResponse(transaction, "Transaction updated successfully", 200));
     }
 
     static async deleteTransaction(req: Request, res: Response, session: mongoose.ClientSession) {
-        const {transactionId} = req.params;
+        const { transactionId } = req.params;
         const user = req.user!;
 
         const transaction = await TransactionModel.findOneAndDelete(
-            {_id: transactionId, user: user.id_user},
-            {session}
+            { _id: transactionId, user: user.id_user },
+            { session }
         );
 
         if (!transaction) {
@@ -127,6 +127,50 @@ class TransactionService {
         }
 
         return res.status(200).json(SuccessResponse(null, "Transaction deleted successfully", 200));
+    }
+
+    static async handleN8nWebhook(req: Request, res: Response, session: mongoose.ClientSession) {
+        try {
+            // Validate webhook data against schema
+            validate(req.body, n8nWebhookBodySchema);
+
+            const { amount, type, description, createdAt, user, sessionId, jid, message } = req.body;
+
+            const transaction = new TransactionModel({
+                user,
+                amount,
+                type,
+                description,
+                createdAt: createdAt ? new Date(createdAt) : new Date(),
+            });
+
+            await transaction.save({ session });
+
+            logger.info(`N8N Webhook: Transaction created from JID ${jid}`, {
+                transactionId: transaction._id,
+                amount,
+                type,
+                description,
+                jid,
+                message,
+            });
+
+            return res.status(201).json(SuccessResponse({
+                transactionId: transaction._id,
+                status: "success",
+                message: "Transaction created from webhook"
+            }, "Webhook transaction created successfully", 201));
+
+        } catch (error) {
+            logger.error("N8N Webhook Error", error);
+
+            if (error instanceof ZodError) {
+                const message = formatErrorValidation(error);
+                return res.status(400).json(ErrorResponse("Validation error", message, 400));
+            }
+
+            return res.status(500).json(ErrorResponse("Internal server error", (error as Error).message, 500));
+        }
     }
 }
 

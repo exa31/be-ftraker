@@ -14,6 +14,8 @@ class Config {
     public static readonly SMTP_PORT = process.env.SMTP_PORT;
     public static readonly SMTP_USER = process.env.SMTP_USER;
     public static readonly SMTP_PASS = process.env.SMTP_PASS;
+    public static readonly N8N_WEBHOOK_SECRET = process.env.N8N_WEBHOOK_SECRET || "your-webhook-secret";
+    public static readonly N8N_API_KEY = process.env.N8N_API_KEY || "your-api-key";
 }
 
 export default Config;

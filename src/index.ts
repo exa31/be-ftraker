@@ -4,9 +4,10 @@ import cors from "cors";
 import "./databases/mongodb";
 import UserRoutes from "./modules/user/userRoutes";
 import TransactionRoutes from "./modules/transaction/transactionRoutes";
-import {logRouting} from "./middleware/logrouting";
-import {logRequest} from "./middleware/logrequest";
-import {validateToken} from "./middleware/validateToken";
+import TransactionWebhookRoutes from "./modules/transaction/transactionWebhookRoutes";
+import { logRouting } from "./middleware/logrouting";
+import { logRequest } from "./middleware/logrequest";
+import { validateToken } from "./middleware/validateToken";
 import Config from "./config";
 
 dotenv.config();
@@ -26,13 +27,14 @@ logRouting(app);
 
 // public routes
 app.use("/auth/v1", UserRoutes);
+app.use("/api", TransactionWebhookRoutes);
 
 // protected routes
 app.use("/api/v1", validateToken, TransactionRoutes);
 
 // 404 handler
 app.all("*", (req, res) => {
-    res.status(404).json({message: "Route not found"});
+    res.status(404).json({ message: "Route not found" });
 });
 
 // start server

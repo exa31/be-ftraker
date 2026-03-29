@@ -1,6 +1,6 @@
-import {Router} from "express";
+import { Router } from "express";
 import TransactionService from "./transactionService";
-import {wrappingDbTransaction} from "../../utils/db";
+import { wrappingDbTransaction } from "../../utils/db";
 
 const router = Router();
 
