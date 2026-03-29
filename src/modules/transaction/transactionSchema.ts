@@ -35,9 +35,6 @@ export const getTransactionQuerySchema = zod.object({
 })
 
 export const n8nWebhookBodySchema = zod.object({
-    sessionId: zod.string().optional(),
-    jid: zod.string(),
-    message: zod.string(),
     amount: zod.number().min(1, "Amount must be a positive number"),
     type: zod.enum(["Income", "Expanse"], "Type must be either 'income' or 'expense'"),
     description: zod.string().min(1, "Description is required"),

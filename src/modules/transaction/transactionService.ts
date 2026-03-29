@@ -134,7 +134,7 @@ class TransactionService {
             // Validate webhook data against schema
             validate(req.body, n8nWebhookBodySchema);
 
-            const { amount, type, description, createdAt, user, sessionId, jid, message } = req.body;
+            const { amount, type, description, createdAt, user, } = req.body;
 
             const transaction = new TransactionModel({
                 user,
@@ -146,13 +146,13 @@ class TransactionService {
 
             await transaction.save({ session });
 
-            logger.info(`N8N Webhook: Transaction created from JID ${jid}`, {
+            logger.info(`N8N Webhook: Transaction created`, {
                 transactionId: transaction._id,
                 amount,
                 type,
                 description,
-                jid,
-                message,
+                createdAt: transaction.createdAt,
+                user
             });
 
             return res.status(201).json(SuccessResponse({
